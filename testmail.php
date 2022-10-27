@@ -3,10 +3,10 @@
 // Download về và giải nén ra, sau đó import vào như dòng 5,6,7(Lưu ý patch để thư viện ở đâu thì patch vào đó) thì hàm mới hoạt động nhé
 // Truyền các tham số cho hàm để set Mail Tự động(Lưu ý đã cấp quyền truy cập từ cài đặt google thì mới hoạt động)
 // Link bài viết chi tiết: https://longnv.name.vn/lap-trinh-php-co-ban/gui-mail-voi-phpmailer
+require "../PHPMailer-master/src/PHPMailer.php"; 
+require "../PHPMailer-master/src/SMTP.php"; 
+require '../PHPMailer-master/src/Exception.php'; 
 function GuiMail( $emailNhan,$tenNguoiGui, $tenNguoiNhan, $tieuDe, $noiDung){   
-    require "../PHPMailer-master/src/PHPMailer.php"; 
-    require "../PHPMailer-master/src/SMTP.php"; 
-    require '../PHPMailer-master/src/Exception.php'; 
     $mail = new PHPMailer\PHPMailer\PHPMailer(true);//true:enables exceptions
     try {
         $mail->SMTPDebug = 0; //0,1,2: chế độ debug. khi chạy ngon thì chỉnh lại 0 nhé
@@ -14,11 +14,11 @@ function GuiMail( $emailNhan,$tenNguoiGui, $tenNguoiNhan, $tieuDe, $noiDung){
         $mail->CharSet  = "utf-8";
         $mail->Host = 'smtp.gmail.com';  //SMTP servers
         $mail->SMTPAuth = true; // Enable authentication
-        $mail->Username = 'gmail của ae'; // SMTP username
-        $mail->Password = 'mật khẩu gmail của ae';   // SMTP password 
+        $mail->Username = 'mail hỗ trợ gửi tin'; // SMTP username
+        $mail->Password = 'mật khẩu mail';   // SMTP password 
         $mail->SMTPSecure = 'ssl';  // encryption TLS/SSL 
         $mail->Port = 465;  // port to connect to                
-        $mail->setFrom('chuonglvv.21it@vku.udn.vn(gmail của ae)', $tenNguoiGui ); 
+        $mail->setFrom('Mail hỗ trợ gửi tin(giống line 17)', $tenNguoiGui ); 
         $mail->addAddress($emailNhan, $tenNguoiNhan);
         $mail->isHTML(true);  // Set email format to HTML
         $mail->Subject = $tieuDe;
@@ -32,7 +32,7 @@ function GuiMail( $emailNhan,$tenNguoiGui, $tenNguoiNhan, $tieuDe, $noiDung){
             )
         ));
         $mail->send();
-        echo "<script>alert('Gửi Mail Thành Công!!!!!') </script>";
+        // echo "<script>alert('Gửi Mail Thành Công!!!!!') </script>";
     } catch (Exception $e) {
         echo 'Mail không gửi được. Lỗi: ', $mail->ErrorInfo;
     }
@@ -50,7 +50,7 @@ if (!$conn) {
     die("Connection failed: " . mysqli_connect_error());
 }
  
-$sql = "SELECT sinhvien.`TenSV`, sinhvien.`Email`, dmsach.`TenSach`, muonsach.`NgayMuon`, muonsach.`NgayTra`, DATEDIFF( muonsach.`NgayTra`,CURDATE() ) AS 'HanTra' FROM `muonsach`, `sinhvien`, `dmsach` WHERE sinhvien.`MaSV` = muonsach.`MaSV` AND dmsach.`MaSach` = muonsach.`MaSach`;";
+$sql = "SELECT sinhvien.`TenSV`, sinhvien.`Email`, dmsach.`TenSach`, muonsach.`NgayMuon`, muonsach.`NgayTra`, DATEDIFF( CURDATE(), muonsach.`NgayTra` ) AS 'HanTra' FROM `muonsach`, `sinhvien`, `dmsach` WHERE sinhvien.`MaSV` = muonsach.`MaSV` AND dmsach.`MaSach` = muonsach.`MaSach`;";
 
 $result = mysqli_query($conn, $sql);
 
@@ -124,7 +124,7 @@ $result = mysqli_query($conn, $sql);
 <?php 
 
 if (isset($_POST['send_mail'])) {
-        $sql = "SELECT sinhvien.`TenSV`, sinhvien.`Email`, dmsach.`TenSach`, muonsach.`NgayMuon`, muonsach.`NgayTra`, DATEDIFF( muonsach.`NgayTra`,CURDATE() ) AS 'HanTra' FROM `muonsach`, `sinhvien`, `dmsach` WHERE sinhvien.`MaSV` = muonsach.`MaSV` AND dmsach.`MaSach` = muonsach.`MaSach`;";
+        $sql = "SELECT sinhvien.`TenSV`, sinhvien.`Email`, dmsach.`TenSach`, muonsach.`NgayMuon`, muonsach.`NgayTra`, DATEDIFF( CURDATE(), muonsach.`NgayTra` ) AS 'HanTra' FROM `muonsach`, `sinhvien`, `dmsach` WHERE sinhvien.`MaSV` = muonsach.`MaSV` AND dmsach.`MaSach` = muonsach.`MaSach`;";
 
         $result = mysqli_query($conn, $sql);
         if (mysqli_num_rows($result) > 0) {
@@ -134,15 +134,18 @@ if (isset($_POST['send_mail'])) {
             <p>Bạn <b><i>'.$row['TenSV'].'</i></b> có thuê từ thư viện quyển sách '.$row['TenSach'].'</p></br>'
             .'<p>Ngày mượn: '.$row['NgayMuon'].'<p/></br>'.
             '<p>Ngày trả: '.$row['NgayTra'].'<p/></br>'.
+            'Thời gian quá hạn: '.$row['HanTra'].' ngày.'
+            .
             '<p>Nay đã quá hạn vui lòng liên hệ thư viện để trả lại sách</p><br/>
             <p>Đây là Mail tự động vui lòng không trả lời!!!</p><br/>
             ';
             $tieude = 'Về việc trả sách đã quá hạn cho thư viện';
             $nguoiGui = 'Chương Leo';
-            if($row['HanTra'] <= 0) {
+            if($row['HanTra'] > 0) {
                 GuiMail($row['Email'], $nguoiGui, $row['TenSV'], $tieude, $noidung);
             } 
         }
+        echo "<script>alert('Gửi Mail Thành Công!!!!!') </script>";
     }
 }
 
